@@ -1,0 +1,12 @@
+# PyInstaller build artifacts — build the exe locally or via CI, don't commit it
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+
+# OS junk
+.DS_Store
+Thumbs.db
