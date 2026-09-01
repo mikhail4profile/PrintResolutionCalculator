@@ -44,3 +44,4 @@ requirements.txt                   — build dependencies
 build_exe.bat                      — one-command local build
 .github/workflows/build-release.yml — automated build and Release publishing
 ```
+
