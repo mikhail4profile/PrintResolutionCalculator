@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print Resolution Calculator</title>
+<style>
+  :root{
+    --paper:#EFF1EC;
+    --paper-panel:#F8F9F6;
+    --rule:#CDD3C7;
+    --rule-strong:#A8B0A0;
+    --ink:#1E2622;
+    --ink-soft:#5B665D;
+    --red:#B8433A;
+    --cyan:#1C7885;
+    --amber:#B5860B;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--sans);}
+  body{
+    min-height:100vh;
+    padding:28px 16px 64px;
+    background-image:
+      linear-gradient(var(--rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: -1px -1px;
+    background-attachment: local;
+  }
+  .sheet{
+    max-width:980px;
+    margin:0 auto;
+    background:var(--paper-panel);
+    border:1px solid var(--rule-strong);
+    position:relative;
+  }
+  /* registration marks */
+  .reg{position:absolute; width:18px; height:18px; pointer-events:none;}
+  .reg::before,.reg::after{content:"";position:absolute;background:var(--ink);}
+  .reg::before{left:8px;top:0;width:2px;height:18px;}
+  .reg::after{left:0;top:8px;width:18px;height:2px;}
+  .reg.tl{top:-9px;left:-9px;} .reg.tr{top:-9px;right:-9px;}
+  .reg.bl{bottom:-9px;left:-9px;} .reg.br{bottom:-9px;right:-9px;}
+
+  header.title{
+    padding:26px 32px 18px;
+    border-bottom:1px solid var(--rule-strong);
+    display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  header.title h1{
+    font-size:22px; margin:0; font-weight:700; letter-spacing:-0.01em;
+  }
+  header.title .sub{
+    font-family:var(--mono); font-size:12px; color:var(--ink-soft);
+  }
+
+  .mode-tabs{
+    display:flex; border-bottom:1px solid var(--rule-strong);
+  }
+  .mode-tabs button{
+    flex:1; padding:13px 10px; font-family:var(--mono); font-size:12.5px;
+    background:transparent; border:none; border-right:1px solid var(--rule-strong);
+    cursor:pointer; color:var(--ink-soft); letter-spacing:.02em;
+  }
+  .mode-tabs button:last-child{border-right:none;}
+  .mode-tabs button.active{ background:var(--ink); color:var(--paper-panel); }
+
+  .grid{
+    display:grid; grid-template-columns: 1.1fr 1fr; gap:0;
+  }
+  @media (max-width:760px){ .grid{grid-template-columns:1fr;} }
+
+  .col{ padding:24px 32px; }
+  .col.left{ border-right:1px solid var(--rule-strong); }
+  @media (max-width:760px){ .col.left{ border-right:none; border-bottom:1px solid var(--rule-strong);} }
+
+  section.block{ margin-bottom:26px; }
+  section.block:last-child{ margin-bottom:0; }
+
+  .block h2{
+    font-size:12.5px; margin:0 0 12px; font-weight:700; letter-spacing:.06em;
+    color:var(--ink); display:flex; align-items:center; gap:8px;
+  }
+  .block h2 .num{ color:var(--red); font-family:var(--mono); }
+
+  .row{ display:flex; gap:10px; margin-bottom:10px; align-items:flex-end; }
+  .field{ flex:1; display:flex; flex-direction:column; gap:5px; }
+  .field label{ font-size:11px; color:var(--ink-soft); }
+  .field input, .field select{
+    font-family:var(--mono); font-size:15px; padding:8px 9px;
+    border:1px solid var(--rule-strong); background:#fff; color:var(--ink);
+    width:100%;
+  }
+  .field input:focus, .field select:focus{ outline:2px solid var(--cyan); outline-offset:-1px; }
+  .field.unit{ max-width:82px; }
+
+  .ppi-presets{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .ppi-presets button{
+    font-family:var(--mono); font-size:12px; padding:6px 9px;
+    border:1px solid var(--rule-strong); background:#fff; cursor:pointer; color:var(--ink);
+  }
+  .ppi-presets button.active{ background:var(--cyan); color:#fff; border-color:var(--cyan); }
+
+  .toggle-group{ display:flex; border:1px solid var(--rule-strong); width:fit-content; margin-top:6px;}
+  .toggle-group button{
+    font-family:var(--mono); font-size:11.5px; padding:7px 12px; background:#fff; border:none;
+    border-right:1px solid var(--rule-strong); cursor:pointer; color:var(--ink-soft);
+  }
+  .toggle-group button:last-child{ border-right:none; }
+  .toggle-group button.active{ background:var(--ink); color:#fff; }
+
+  .hint{ font-size:11px; color:var(--ink-soft); margin-top:6px; line-height:1.5; }
+
+  /* summary panel */
+  .summary{
+    background:var(--ink); color:var(--paper-panel); padding:20px 22px;
+    font-family:var(--mono);
+  }
+  .summary .label{
+    font-size:10.5px; letter-spacing:.08em; color:#9FB0A2; margin-bottom:2px;
+  }
+  .summary .value{ font-size:16px; margin-bottom:14px; }
+  .summary .value.big{ font-size:20px; color:#fff; }
+  .summary .value:last-child{ margin-bottom:0; }
+  .warn-badge{
+    display:inline-block; font-family:var(--sans); font-size:11.5px; padding:3px 8px;
+    background:var(--amber); color:#231a00; margin-top:2px;
+  }
+  .ok-badge{
+    display:inline-block; font-family:var(--sans); font-size:11.5px; padding:3px 8px;
+    background:#3E7A52; color:#fff; margin-top:2px;
+  }
+
+  table.presets{
+    width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; margin-top:10px;
+  }
+  table.presets th, table.presets td{
+    text-align:left; padding:6px 4px; border-bottom:1px solid var(--rule);
+  }
+  table.presets th{ color:var(--ink-soft); font-weight:600; font-size:11px; }
+  table.presets tr.current td{ color:var(--cyan); font-weight:700; }
+
+  .aspect-note{
+    font-size:11.5px; margin-top:10px; padding:10px 12px; border-left:3px solid var(--amber);
+    background:#FBF3DE; line-height:1.5;
+  }
+  .aspect-note.ok{ border-left-color:#3E7A52; background:#E9F3EB; }
+
+  footer.info{
+    padding:16px 32px 22px; border-top:1px solid var(--rule-strong);
+    font-size:11px; color:var(--ink-soft); line-height:1.6;
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="reg tl"></div><div class="reg tr"></div><div class="reg bl"></div><div class="reg br"></div>
+
+  <header class="title">
+    <h1>Print Resolution Calculator</h1>
+    <div class="sub">PPI / PRINT SIZE / PIXEL COUNT — OFFLINE</div>
+  </header>
+
+  <div class="mode-tabs">
+    <button id="tab-toPixels" class="active">PRINT → PIXELS</button>
+    <button id="tab-toPrint">PIXELS → PRINT</button>
+  </div>
+
+  <div class="grid">
+    <div class="col left">
+
+      <!-- PRINT SIZE -->
+      <section class="block" id="printSizeBlock">
+        <h2><span class="num">01</span> <span id="printSizeTitle">PRINT SIZE</span></h2>
+        <div class="row">
+          <div class="field" id="printWField"><label>Width</label><input id="printW" type="number" min="0" step="any" value="200"></div>
+          <div class="field" id="printHField"><label>Height</label><input id="printH" type="number" min="0" step="any" value="130"></div>
+          <div class="field unit">
+            <label>Unit</label>
+            <select id="unit">
+              <option value="cm" selected>cm</option>
+              <option value="mm">mm</option>
+              <option value="in">in</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint" id="printSizeHint"></div>
+      </section>
+
+      <!-- SOURCE IMAGE -->
+      <section class="block" id="sourceBlock">
+        <h2><span class="num">02</span> SOURCE IMAGE</h2>
+        <div class="row">
+          <div class="field"><label>Width, px</label><input id="srcW" type="number" min="0" step="1" value="1500"></div>
+          <div class="field"><label>Height, px</label><input id="srcH" type="number" min="0" step="1" value="1000"></div>
+        </div>
+        <div class="hint">Leave empty if you haven't chosen a source image yet.</div>
+      </section>
+
+      <!-- TARGET RESOLUTION -->
+      <section class="block" id="ppiBlock">
+        <h2><span class="num">03</span> TARGET RESOLUTION</h2>
+        <div class="row">
+          <div class="field" style="max-width:140px;">
+            <label>PPI</label>
+            <input id="ppi" type="number" min="1" step="any" value="150">
+          </div>
+        </div>
+        <div class="ppi-presets" id="ppiPresets"></div>
+        <div class="hint">PPI (pixels per inch) — the pixel density of the image at a given physical print size. DPI refers to the resolution of the printing device, not the file.</div>
+      </section>
+
+      <!-- SOURCE PIXELS (for reverse mode) -->
+      <section class="block" id="reverseBlock" style="display:none;">
+        <h2><span class="num">02</span> IMAGE FILE SIZE</h2>
+        <div class="row">
+          <div class="field"><label>Width, px</label><input id="revW" type="number" min="0" step="1" value="11811"></div>
+          <div class="field"><label>Height, px</label><input id="revH" type="number" min="0" step="1" value="7677"></div>
+        </div>
+      </section>
+
+      <section class="block" id="aspectModeBlock">
+        <h2><span class="num">04</span> ASPECT MISMATCH HANDLING</h2>
+        <div class="toggle-group" id="aspectMode">
+          <button data-v="keep" class="active">Keep proportions</button>
+          <button data-v="exact">Exact size</button>
+        </div>
+        <div class="hint">When the source and print format proportions differ: "Keep proportions" calculates the size without distortion (allowing extra for cropping); "Exact size" fits exactly to the print format (may cause distortion).</div>
+      </section>
+
+    </div>
+
+    <div class="col right">
+      <section class="block" style="margin-bottom:0;">
+        <h2 style="margin-bottom:0;"><span class="num">▣</span> PRINT SUMMARY</h2>
+        <div class="summary" id="summary" style="margin-top:14px;"></div>
+        <div id="aspectNote"></div>
+      </section>
+
+      <section class="block" id="presetsTableBlock">
+        <h2 style="margin-top:24px;">PPI COMPARISON</h2>
+        <table class="presets">
+          <thead><tr><th>PPI</th><th>Required px</th></tr></thead>
+          <tbody id="presetsBody"></tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <footer class="info">
+    All calculations run locally in your browser — no data is sent anywhere. Switching units (mm / cm / in) doesn't change the physical size, only how it's displayed.
+  </footer>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const PPI_PRESETS = [72, 96, 100, 120, 150, 200, 240, 300];
+
+  let state = {
+    mode: 'toPixels', // or 'toPrint'
+    unit: 'cm',
+    printW: 200, printH: 130,   // stored in current display unit; canonical conversion on the fly
+    srcW: 1500, srcH: 1000,
+    revW: 11811, revH: 7677,
+    ppi: 150,
+    aspectMode: 'keep'
+  };
+
+  function toInches(value, unit){
+    if(unit === 'mm') return value / 25.4;
+    if(unit === 'cm') return value / 2.54;
+    return value; // in
+  }
+  function fromInches(value, unit){
+    if(unit === 'mm') return value * 25.4;
+    if(unit === 'cm') return value * 2.54;
+    return value;
+  }
+  function fmt(n, d=2){
+    if(!isFinite(n)) return '—';
+    return n.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:d});
+  }
+  function fmtPx(n){
+    if(!isFinite(n) || n<0) return '—';
+    return Math.round(n).toLocaleString('en-US');
+  }
+
+  function buildPpiPresets(){
+    const wrap = $('ppiPresets');
+    wrap.innerHTML = '';
+    PPI_PRESETS.forEach(v=>{
+      const b = document.createElement('button');
+      b.textContent = v;
+      b.dataset.v = v;
+      b.addEventListener('click', ()=>{
+        state.ppi = v;
+        $('ppi').value = v;
+        render();
+      });
+      wrap.appendChild(b);
+    });
+    const custom = document.createElement('button');
+    custom.textContent = 'Custom';
+    custom.dataset.v = 'custom';
+    wrap.appendChild(custom);
+  }
+
+  function syncPpiPresetButtons(){
+    document.querySelectorAll('#ppiPresets button').forEach(b=>{
+      if(b.dataset.v === 'custom'){
+        b.classList.toggle('active', !PPI_PRESETS.includes(Number(state.ppi)));
+      } else {
+        b.classList.toggle('active', Number(b.dataset.v) === Number(state.ppi));
+      }
+    });
+  }
+
+  function setMode(mode){
+    state.mode = mode;
+    $('tab-toPixels').classList.toggle('active', mode==='toPixels');
+    $('tab-toPrint').classList.toggle('active', mode==='toPrint');
+    $('sourceBlock').style.display = (mode==='toPixels') ? '' : 'none';
+    $('reverseBlock').style.display = (mode==='toPrint') ? '' : 'none';
+    $('aspectModeBlock').style.display = (mode==='toPixels') ? '' : 'none';
+    $('presetsTableBlock').style.display = (mode==='toPixels') ? '' : 'none';
+
+    // In "Pixels → Print" mode the print size is the calculated result, not
+    // an input — only the display unit is still needed, so hide the
+    // width/height boxes and relabel the block.
+    $('printWField').style.display = (mode==='toPixels') ? '' : 'none';
+    $('printHField').style.display = (mode==='toPixels') ? '' : 'none';
+    $('printSizeTitle').textContent = (mode==='toPixels') ? 'PRINT SIZE' : 'OUTPUT UNIT';
+
+    render();
+  }
+
+  function readInputs(){
+    state.printW = parseFloat($('printW').value) || 0;
+    state.printH = parseFloat($('printH').value) || 0;
+    state.unit = $('unit').value;
+    state.srcW = parseFloat($('srcW').value) || 0;
+    state.srcH = parseFloat($('srcH').value) || 0;
+    state.revW = parseFloat($('revW').value) || 0;
+    state.revH = parseFloat($('revH').value) || 0;
+    state.ppi = parseFloat($('ppi').value) || 0;
+  }
+
+  function render(){
+    readInputs();
+    syncPpiPresetButtons();
+
+    const printWIn = Math.max(0, toInches(state.printW, state.unit));
+    const printHIn = Math.max(0, toInches(state.printH, state.unit));
+
+    if(state.mode === 'toPixels'){
+      renderToPixels(printWIn, printHIn);
+    } else {
+      renderToPrint();
+    }
+  }
+
+  function renderToPixels(printWIn, printHIn){
+    const ppi = state.ppi;
+    const reqW = printWIn * ppi;
+    const reqH = printHIn * ppi;
+
+    const hasSource = state.srcW > 0 && state.srcH > 0;
+
+    let sourcePpiW = hasSource ? (state.srcW / printWIn) : null;
+    let sourcePpiH = hasSource ? (state.srcH / printHIn) : null;
+
+    // aspect ratio comparison
+    let aspectWarn = false, aspectDiffPct = 0;
+    let sourceRatio = null, printRatio = null;
+    if(hasSource && printWIn>0 && printHIn>0){
+      sourceRatio = state.srcW / state.srcH;
+      printRatio = printWIn / printHIn;
+      aspectDiffPct = Math.abs(sourceRatio - printRatio) / printRatio * 100;
+      aspectWarn = aspectDiffPct > 0.5; // >0.5% considered a mismatch
+    }
+
+    // upscale factor + final size
+    let upW = null, upH = null, finalW = null, finalH = null;
+    if(hasSource){
+      upW = reqW / state.srcW;
+      upH = reqH / state.srcH;
+      if(state.aspectMode === 'exact' || !aspectWarn){
+        finalW = reqW; finalH = reqH;
+      } else {
+        // keep proportions: scale by the larger factor to fully cover the print area
+        const f = Math.max(upW, upH);
+        finalW = state.srcW * f;
+        finalH = state.srcH * f;
+      }
+    }
+
+    // --- summary panel ---
+    const printSizeStr = `${fmt(state.printW)} × ${fmt(state.printH)} ${state.unit}`;
+    let html = '';
+    html += row('Print size', printSizeStr, true);
+    html += row('Target resolution', `${fmt(ppi,0)} PPI`);
+    html += row('Required file size', `${fmtPx(reqW)} × ${fmtPx(reqH)} px`, true);
+
+    if(hasSource){
+      html += row('Source image', `${fmtPx(state.srcW)} × ${fmtPx(state.srcH)} px`);
+      html += row('Source effective PPI', `≈ ${fmt(sourcePpiW,1)} (width) / ≈ ${fmt(sourcePpiH,1)} (height)`);
+
+      let upcaleStr;
+      if(Math.abs(upW-upH) < 0.005){
+        upcaleStr = `≈ ${fmt(upW,2)}×`;
+      } else {
+        upcaleStr = `width ≈ ${fmt(upW,2)}× / height ≈ ${fmt(upH,2)}×`;
+      }
+      html += row('Upscale factor', upcaleStr, true);
+      html += row('Final size after upscaling', `${fmtPx(finalW)} × ${fmtPx(finalH)} px`);
+    }
+
+    $('summary').innerHTML = html;
+
+    // aspect note
+    const noteEl = $('aspectNote');
+    if(hasSource && printWIn>0 && printHIn>0){
+      if(aspectWarn){
+        noteEl.innerHTML = `<div class="aspect-note">⚠ The source image's aspect ratio (${fmt(sourceRatio,3)}:1) differs from the print format (${fmt(printRatio,3)}:1) — mismatch ≈ ${fmt(aspectDiffPct,1)}%. ${state.aspectMode==='keep' ? 'The final size was calculated keeping proportions — cropping will be needed on one side.' : 'Exact size selected — the image will be stretched/squeezed to fit the print format.'}</div>`;
+      } else {
+        noteEl.innerHTML = `<div class="aspect-note ok">✓ The source image and print format aspect ratios match.</div>`;
+      }
+    } else {
+      noteEl.innerHTML = '';
+    }
+
+    // presets table
+    const tbody = $('presetsBody');
+    tbody.innerHTML = '';
+    PPI_PRESETS.forEach(p=>{
+      const w = printWIn * p, h = printHIn * p;
+      const tr = document.createElement('tr');
+      if(p === Math.round(state.ppi)) tr.classList.add('current');
+      tr.innerHTML = `<td>${p}</td><td>${fmtPx(w)} × ${fmtPx(h)} px</td>`;
+      tbody.appendChild(tr);
+    });
+
+    $('printSizeHint').textContent = printWIn>0 && printHIn>0 ? `= ${fmt(printWIn,2)} × ${fmt(printHIn,2)} in` : '';
+  }
+
+  function renderToPrint(){
+    const ppi = state.ppi;
+    const wIn = ppi>0 ? state.revW / ppi : 0;
+    const hIn = ppi>0 ? state.revH / ppi : 0;
+    const wOut = fromInches(wIn, state.unit);
+    const hOut = fromInches(hIn, state.unit);
+
+    let html = '';
+    html += row('File size', `${fmtPx(state.revW)} × ${fmtPx(state.revH)} px`, true);
+    html += row('Resolution', `${fmt(ppi,0)} PPI`);
+    html += row('Physical print size', `${fmt(wOut,2)} × ${fmt(hOut,2)} ${state.unit}`, true);
+    html += row('Equivalent', `${fmt(fromInches(wIn,'mm'),1)} × ${fmt(fromInches(hIn,'mm'),1)} mm  /  ${fmt(wIn,2)} × ${fmt(hIn,2)} in`);
+    $('summary').innerHTML = html;
+    $('aspectNote').innerHTML = '';
+    $('printSizeHint').textContent = 'This unit only controls how the calculated print size is displayed above.';
+  }
+
+  function row(label, value, big){
+    return `<div class="label">${label}</div><div class="value${big?' big':''}">${value}</div>`;
+  }
+
+  // --- wire up events ---
+  $('tab-toPixels').addEventListener('click', ()=>setMode('toPixels'));
+  $('tab-toPrint').addEventListener('click', ()=>setMode('toPrint'));
+
+  ['printW','printH','unit','srcW','srcH','revW','revH','ppi'].forEach(id=>{
+    $(id).addEventListener('input', render);
+    $(id).addEventListener('change', render);
+  });
+
+  document.querySelectorAll('#aspectMode button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      state.aspectMode = b.dataset.v;
+      document.querySelectorAll('#aspectMode button').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      render();
+    });
+  });
+
+  // unit switch: convert stored print size so physical size stays constant
+  let lastUnit = state.unit;
+  $('unit').addEventListener('change', ()=>{
+    const newUnit = $('unit').value;
+    const wIn = toInches(parseFloat($('printW').value)||0, lastUnit);
+    const hIn = toInches(parseFloat($('printH').value)||0, lastUnit);
+    $('printW').value = round4(fromInches(wIn, newUnit));
+    $('printH').value = round4(fromInches(hIn, newUnit));
+    lastUnit = newUnit;
+    render();
+  });
+  function round4(n){ return Math.round(n*10000)/10000; }
+
+  buildPpiPresets();
+  setMode('toPixels');
+  render();
+})();
+</script>
+</body>
+</html>
