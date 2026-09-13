@@ -11,9 +11,9 @@ is just a wrapper in a native window.
 
 ## Download the ready-made .exe
 
-The built `PrintResolutionCalculator.exe` is not stored in the repository —
+The built `PrintResolutionCalculator` is not stored in the repository —
 grab the latest version from the **[Releases](../../releases)** page.
-Nothing to install: a single file, offline, no Python required.
+It is a single portable .rar, unpack it and run .exe.
 
 If there are no releases yet (or you want a fresh build from the current
 code) — build it yourself, see below, or run the workflow manually from the
