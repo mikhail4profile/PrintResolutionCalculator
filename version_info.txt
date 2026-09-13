@@ -1,0 +1,40 @@
+# UTF-8
+#
+# Windows version-info resource for PyInstaller (--version-file).
+# Genuine desktop apps almost always carry this metadata (company,
+# product name, description, copyright, version numbers). Its absence
+# is itself one of the signals static-ML antivirus heuristics use to
+# flag a binary as "generic/unknown" — this costs nothing and gives
+# the exe a real, inspectable identity in Windows Explorer's
+# Properties → Details tab.
+#
+# Bump filevers/prodvers/FileVersion/ProductVersion on each release.
+
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(1, 2, 0, 0),
+    prodvers=(1, 2, 0, 0),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+    ),
+  kids=[
+    StringFileInfo(
+      [
+      StringTable(
+        u'040904B0',
+        [StringStruct(u'CompanyName', u'mikhail4profile'),
+        StringStruct(u'FileDescription', u'Print Resolution Calculator — offline print size / PPI-DPI tool'),
+        StringStruct(u'FileVersion', u'1.2.0.0'),
+        StringStruct(u'InternalName', u'PrintResolutionCalculator'),
+        StringStruct(u'LegalCopyright', u'Apache License 2.0 — mikhail4profile'),
+        StringStruct(u'OriginalFilename', u'PrintResolutionCalculator.exe'),
+        StringStruct(u'ProductName', u'Print Resolution Calculator'),
+        StringStruct(u'ProductVersion', u'1.2.0.0')])
+      ]),
+    VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
+  ]
+)
