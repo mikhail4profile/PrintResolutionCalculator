@@ -9,7 +9,7 @@ Works as a plain `.html` file in your browser **or** as a standalone Windows
 desktop app (`.exe`) — it's the same interface and logic, the second option
 is just a wrapper in a native window.
 
-## Download the ready-made .exe
+## Download the ready-made program
 
 The built `PrintResolutionCalculator` is not stored in the repository —
 grab the latest version from the **[Releases](../../releases)** page.
