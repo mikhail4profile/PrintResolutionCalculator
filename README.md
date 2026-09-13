@@ -19,7 +19,7 @@ If there are no releases yet (or you want a fresh build from the current
 code) — build it yourself, see below, or run the workflow manually from the
 **Actions** tab.
 
-## Run without building
+## Run without .exe
 
 SmartScreen may block my exe because the application is not signed. The simplest alternative option — download only `print-resolution-calculator.html` and just open it in any browser. It's the same interface as the `.exe`, with nothing to install.
 
