@@ -5,6 +5,10 @@ This does NOT reimplement the calculator. It loads the original
 print-resolution-calculator.html file (unchanged) inside a native
 window via pywebview, so all HTML/CSS/JS logic stays 1:1 identical
 to the browser version.
+
+resource_path() is written to work correctly no matter which packer
+built the .exe (PyInstaller or Nuitka), so this same file works for
+both build pipelines without edits.
 """
 import os
 import sys
@@ -15,10 +19,21 @@ HTML_FILE = "print-resolution-calculator.html"
 
 
 def resource_path(relative_path: str) -> str:
-    """Resolve a bundled resource path, whether running from source
-    or from a PyInstaller-built .exe (which unpacks data files into
-    sys._MEIPASS at runtime)."""
-    base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    """Resolve a bundled resource path across build tools and plain
+    source runs:
+      - PyInstaller sets sys._MEIPASS (temp dir in --onefile mode,
+        the exe's own folder in --onedir mode).
+      - Nuitka (--standalone/--onefile) sets sys.frozen but not
+        _MEIPASS; bundled data files sit next to sys.executable.
+      - Running main.py directly (no packer): resolve next to this
+        source file.
+    """
+    if hasattr(sys, "_MEIPASS"):
+        base_path = sys._MEIPASS
+    elif getattr(sys, "frozen", False):
+        base_path = os.path.dirname(os.path.abspath(sys.executable))
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
 
@@ -27,7 +42,7 @@ def main():
     if not os.path.exists(html_path):
         raise FileNotFoundError(
             f"Could not find {HTML_FILE} next to the executable. "
-            "Make sure it was bundled with --add-data."
+            "Make sure it was bundled as a data file by the build."
         )
 
     webview.create_window(
