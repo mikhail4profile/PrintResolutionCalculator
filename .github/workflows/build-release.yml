@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: write
-  
+
 jobs:
   build:
     runs-on: windows-latest
@@ -24,23 +24,26 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Build exe with PyInstaller
+      - name: Build with PyInstaller (onedir, no UPX)
         run: >
-          pyinstaller --noconfirm --onefile --windowed
+          pyinstaller --noconfirm --onedir --noupx --windowed
           --name PrintResolutionCalculator
           --add-data "print-resolution-calculator.html;."
           main.py
+
+      - name: Zip the build output
+        run: Compress-Archive -Path dist\PrintResolutionCalculator\* -DestinationPath dist\PrintResolutionCalculator-windows.zip
 
       - name: Upload build artifact (for manual runs / debugging)
         uses: actions/upload-artifact@v4
         with:
           name: PrintResolutionCalculator-windows
-          path: dist/PrintResolutionCalculator.exe
+          path: dist/PrintResolutionCalculator-windows.zip
 
-      - name: Attach exe to GitHub Release
+      - name: Attach zip to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/PrintResolutionCalculator.exe
+          files: dist/PrintResolutionCalculator-windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
